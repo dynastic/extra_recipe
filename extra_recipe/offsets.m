@@ -33,6 +33,8 @@ uint64_t allproc = 0;
 uint64_t realhost = 0;
 uint64_t call5 = 0;
 
+int nports = 40000;
+
 static NSMutableArray *consttable = nil;
 static NSMutableArray *collide = nil;
 
@@ -84,6 +86,38 @@ uint64_t
 constget(int idx)
 {
     return [[consttable objectAtIndex:idx] unsignedLongLongValue];
+}
+
+static int
+offload(const char *hw, NSString *ios)
+{
+    NSArray *dp = [[NSArray alloc] initWithContentsOfFile: [[NSBundle mainBundle] pathForResource: @"dex" ofType:@"plist"]];
+    for (NSDictionary *dict in dp) {
+        NSArray *hw_array = dict[@"hw"];
+        for (NSString *h in hw_array) {
+            if (!strcmp([h UTF8String], hw)) {
+                NSArray *ios_array = dict[@"ios"];
+                for (NSString *i in ios_array) {
+                    if ([ios compare:i] == NSOrderedSame) {
+                        NSArray *a = dict[@"offsets"];
+                        AGXCommandQueue_vtable = strtoull([[a objectAtIndex:0] UTF8String], NULL, 0);
+                        OSData_getMetaClass = strtoull([[a objectAtIndex:1] UTF8String], NULL, 0);
+                        OSSerializer_serialize = strtoull([[a objectAtIndex:2] UTF8String], NULL, 0);
+                        k_uuid_copy = strtoull([[a objectAtIndex:3] UTF8String], NULL, 0);
+                        allproc = strtoull([[a objectAtIndex:4] UTF8String], NULL, 0);
+                        realhost = strtoull([[a objectAtIndex:5] UTF8String], NULL, 0);
+                        call5 = strtoull([[a objectAtIndex:6] UTF8String], NULL, 0);
+                        NSNumber *np = dict[@"nports"];
+                        if (np) {
+                            nports = [np intValue];
+                        }
+                        return 0;
+                    }
+                }
+            }
+        }
+    }
+    return -1;
 }
 
 int
